@@ -1,0 +1,286 @@
+/* Copyright (C) 2026  limforge <limforge@neutronen.net>, justpav05
+
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. */
+
+use indexmap::IndexMap;
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
+
+fn default_display() -> bool {
+    true
+}
+fn default_order() -> u32 {
+    99
+}
+fn default_format() -> String {
+    "{value}".to_string()
+}
+
+const MODULE_KEYS: &[(&str, bool, Option<&str>, u32)] = &[
+    ("os", true, Some("#DC8A78"), 1),
+    ("user", true, Some("#DD7878"), 2),
+    ("hostname", true, Some("#EA76CB"), 3),
+    ("shell", false, Some("#209FBE"), 4),
+    ("wm", true, Some("#8839EF"), 5),
+    ("ram", true, Some("#E64553"), 6),
+    ("swap", true, Some("#FE640B"), 7),
+    ("cpu", true, Some("#DF8E1D"), 8),
+    ("disk", false, Some("#89B4FA"), 9),
+    ("krnl", true, Some("#40A02B"), 10),
+    ("days", true, Some("#179299"), 11),
+    ("init", false, Some("#04A5E5"), 12),
+    ("packages", true, Some("#F9E2AF"), 13),
+];
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ModuleConfig {
+    #[serde(default = "default_display")]
+    pub display: bool,
+
+    #[serde(default)]
+    pub label: Option<String>,
+
+    #[serde(default)]
+    pub color: Option<String>,
+
+    #[serde(default = "default_order")]
+    pub order: u32,
+
+    #[serde(default = "default_format")]
+    pub format: String,
+}
+
+impl Default for ModuleConfig {
+    fn default() -> Self {
+        Self {
+            display: true,
+            label: None,
+            color: None,
+            order: default_order(),
+            format: default_format(),
+        }
+    }
+}
+
+impl ModuleConfig {
+    pub fn from_key(key: &str) -> Self {
+        let (display, color, order) = MODULE_KEYS
+            .iter()
+            .find(|(k, _, _, _)| *k == key)
+            .map(|(_, d, c, o)| (*d, *c, *o))
+            .unwrap_or((true, None, 99));
+
+        let format = match key {
+            "ram" | "swap" => "{used}/{total} MiB".to_string(),
+            "cpu" => "{brand} ({cores})".to_string(),
+            _ => default_format(),
+        };
+
+        Self {
+            display,
+            label: None,
+            color: color.map(str::to_string),
+            order,
+            format,
+        }
+    }
+
+    pub fn resolve_label<'a>(&'a self, key: &'a str) -> &'a str {
+        self.label.as_deref().unwrap_or(key)
+    }
+
+    pub fn resolve_color(&self, fallback: (u8, u8, u8)) -> (u8, u8, u8) {
+        self.color
+            .as_deref()
+            .and_then(hex_to_rgb)
+            .unwrap_or(fallback)
+    }
+
+    pub fn format_value(&self, vars: &[(&str, &str)]) -> String {
+        let mut result = self.format.clone();
+        for (name, val) in vars {
+            result = result.replace(&format!("{{{}}}", name), val);
+        }
+        // Warn about leftover unresolved placeholders
+        if result.contains('{') && result.contains('}') {
+            eprintln!(
+                "warning: unresolved placeholder in format string: {}",
+                result
+            );
+        }
+        result
+    }
+}
+
+fn hex_to_rgb(hex: &str) -> Option<(u8, u8, u8)> {
+    let hex = hex.trim().trim_start_matches('#');
+    if hex.len() != 6 {
+        return None;
+    }
+    let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
+    let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
+    let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
+    Some((r, g, b))
+}
+
+fn default_logo() -> String {
+    "default".to_string()
+}
+fn default_custom_art() -> Option<String> {
+    None
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Config {
+    #[serde(rename = "Modules")]
+    pub modules: IndexMap<String, ModuleConfig>,
+
+    #[serde(default = "default_logo")]
+    pub logo: String,
+
+    #[serde(default = "default_custom_art")]
+    pub custom_art: Option<String>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        let modules = MODULE_KEYS
+            .iter()
+            .map(|(k, _, _, _)| (k.to_string(), ModuleConfig::from_key(k)))
+            .collect();
+
+        Config {
+            modules,
+            logo: default_logo(),
+            custom_art: None,
+        }
+    }
+}
+
+impl Config {
+    pub fn module_enabled(&self, key: &str) -> bool {
+        self.modules.get(key).is_some_and(|m| m.display)
+    }
+
+    pub fn normalize_order(&mut self) {
+        self.modules.sort_by(|_, a, _, b| a.order.cmp(&b.order));
+
+        for (new_order, (_, module)) in self.modules.iter_mut().enumerate() {
+            module.order = (new_order + 1) as u32;
+        }
+    }
+}
+
+fn get_config_path() -> PathBuf {
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+
+    let mut base = match home {
+        Some(p) => p,
+        None => return PathBuf::from("config.json"),
+    };
+
+    #[cfg(target_os = "macos")]
+    base.push("Library/Application Support/noorfetchre/config.json");
+
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
+    base.push(".config/noorfetchre/config.json");
+
+    #[cfg(not(any(
+        target_os = "macos",
+        target_os = "linux",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )))]
+    base.push("noorfetchre/config.json");
+
+    base
+}
+
+pub fn load_config() -> Config {
+    let path = get_config_path();
+
+    if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+
+    if !path.exists() {
+        let default_config = Config::default();
+        if let Ok(json) = serde_json::to_string_pretty(&default_config) {
+            if fs::write(&path, json).is_ok() {
+                eprintln!("note: created default config at {}", path.display());
+            }
+        }
+        return default_config;
+    }
+
+    match fs::read_to_string(&path) {
+        Ok(content) => match serde_json::from_str::<Config>(&content) {
+            Ok(mut cfg) => {
+                // Merge missing default modules
+                let default_cfg = Config::default();
+                for (k, v) in default_cfg.modules {
+                    if !cfg.modules.contains_key(&k) {
+                        cfg.modules.insert(k, v);
+                    }
+                }
+                cfg.normalize_order();
+                cfg
+            }
+            Err(e) => {
+                eprintln!("Error parsing config: {}, using defaults", e);
+                Config::default()
+            }
+        },
+        Err(e) => {
+            eprintln!("Failed to read config file: {}, using defaults", e);
+            Config::default()
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hex_to_rgb_parses_six_digit_hex() {
+        assert_eq!(hex_to_rgb("#DC8A78"), Some((220, 138, 120)));
+        assert_eq!(hex_to_rgb("DC8A78"), Some((220, 138, 120)));
+    }
+
+    #[test]
+    fn hex_to_rgb_rejects_invalid() {
+        assert_eq!(hex_to_rgb("#GGG"), None);
+        assert_eq!(hex_to_rgb("#FFF"), None);
+    }
+
+    #[test]
+    fn module_format_substitutes_placeholders() {
+        let m = ModuleConfig {
+            format: "{used}/{total} MiB".to_string(),
+            ..ModuleConfig::default()
+        };
+        assert_eq!(
+            m.format_value(&[("used", "512"), ("total", "8192")]),
+            "512/8192 MiB"
+        );
+    }
+}
