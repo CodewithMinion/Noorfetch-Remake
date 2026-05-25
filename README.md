@@ -10,7 +10,7 @@ Noorfetch Remake was created to further develop this project.
 ## Installation
 ### Build from source
 
-Install Noorfetch Remake from Codeberg:
+Install Noorfetch Remake from Github:
 ```bash
 git clone https://github.com/CodewithMinion/Noorfetch-Remake
 cd Noorfetch-Remake
