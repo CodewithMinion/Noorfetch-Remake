@@ -2,7 +2,7 @@
 
 ![Static Badge](https://img.shields.io/badge/release-4.0.0-green?style=flat) ![Static Badge](https://img.shields.io/badge/license-GNU_LGPL--v3.0-green?style=flat)
 
-**Noorfetch Remake (arab. نور) - is a remake of the little-known Noorfetch (https://codeberg.org/limforge/noorfetch), which is phasing out support and will no longer be updated.
+**Noorfetch Remake (arab. نور) - is a remake of the little-known [Noorfetch](https://codeberg.org/limforge/noorfetch), which is phasing out support and will no longer be updated.
 Noorfetch Remake was created to further develop this project.
 
 ![RSFetch screenshot](https://i.postimg.cc/fLxnzvW7/noorfetch-screenshot.png)
