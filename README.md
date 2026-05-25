@@ -13,7 +13,7 @@ Noorfetch Remake was created to further develop this project.
 Install Noorfetch Remake from Codeberg:
 ```bash
 git clone https://github.com/CodewithMinion/Noorfetch-Remake
-cd noorfetch
+cd Noorfetch-Remake
 ```
 
 Compile the project using Cargo
