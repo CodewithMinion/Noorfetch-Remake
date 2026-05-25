@@ -1,40 +1,18 @@
 # Noorfetch Remake
 
-![Static Badge](https://img.shields.io/badge/release-4.0.0-green?style=flat) ![Static Badge](https://img.shields.io/badge/license-GNU_LGPL--v3.0-green?style=flat) ![Static Badge](https://img.shields.io/badge/Available_on-Homebrew-yellow) ![Static Badge](https://img.shields.io/badge/Available_on-Cargo-red) ![Static Badge](https://img.shields.io/badge/Available_on-AUR-blue)
+![Static Badge](https://img.shields.io/badge/release-4.0.0-green?style=flat) ![Static Badge](https://img.shields.io/badge/license-GNU_LGPL--v3.0-green?style=flat)
 
-**Noorfetch Remake (arab. نور)** is a minimalistic and fast summary of information about your computer, written in Rust!
+**Noorfetch Remake (arab. نور) - is a remake of the little-known Noorfetch (https://codeberg.org/limforge/noorfetch), which is phasing out support and will no longer be updated.
+Noorfetch Remake was created to further develop this project.
 
 ![RSFetch screenshot](https://i.postimg.cc/fLxnzvW7/noorfetch-screenshot.png)
 
 ## Installation
-
-### Versatile. Run the installer
-Noorfetch Remake can be installed using a shell script. Run ``installer.sh``
-
-### Arch Linux
-#### From AUR
-```shell
-git clone https://aur.archlinux.org/noorfetch.git
-cd noorfetch
-makepkg -si
-```
-
-### 🍺 Homebrew
-```bash
-brew tap vfthme/lim
-brew install noorfetchre
-```
-
-### 🦀 Cargo
-```bash
-cargo install noorfetchre
-```
-
 ### Build from source
 
 Install Noorfetch Remake from Codeberg:
 ```bash
-git clone https://codeberg.org/limforge/noorfetch
+git clone https://github.com/CodewithMinion/Noorfetch-Remake
 cd noorfetch
 ```
 
@@ -65,55 +43,27 @@ This project incorporates the following Rust libraries (crates):
 * [indexmap](https://crates.io/crates/indexmap) - MIT License or Apache-2.0
 * [libc](https://crates.io/crates/libc) - MIT License or Apache-2.0
 
-# Changelog
+# Changelog (What was reworked and added by me)
 
-## 4.0.0
+## 3.2.x - 4.0.0
 
-- Проект переименован в **Noorfetch Remake**, команда в терминале: `noorfetchre`
-- Конфиг: `~/.config/noorfetchre/config.json`
-- Сборка включает все изменения из 3.3.0 и 3.2.x (см. ниже)
+- Project renamed to **Noorfetch Remake**, command in terminal: `noorfetchre`
+- Configuration: `~/.config/noorfetchre/config.json`
+- The build includes all changes from 3.3.0 and 3.2.x (see below)
+- Version 4.0 was released thanks to me; the original author planned to release it.
 
-## 3.3.0
+### Distributions
+- Added support for: **Alpine**, **Linux Mint**, **SteamOS**, **Devuan**
 
-### Логотипы
-- Цветные ASCII-лого для **Alpine**, **Linux Mint**, **SteamOS**, **Devuan**
-- Удалены отдельные лого: Oracle, PikaOS, Ultramarine, Qubes, Omarchy
+### Performance
+- Collect data only for **enabled** modules in `config.json`
+- Single pass through `/proc` to determine the WM
+- pacman packet counting via directory
+- `hostname` via the `gethostname` syscall
+- Buffered output to stdout
 
-### Исправления
-- `--logo=alpine`, `--logo=linuxmint` и другие короткие имена распознаются надёжно
-
----
-
-## 3.2.x
-
-### Производительность
-- Сбор данных только для **включённых** модулей в `config.json`
-- Один проход по `/proc` для определения WM
-- Подсчёт пакетов pacman через каталог
-- `hostname` через syscall `gethostname`
-- Буферизованный вывод в stdout
-
-### Новые возможности
+### New Features
 - `--version` / `-V`, `NO_COLOR`, `CLICOLOR=0`
-- Подсчёт rpm/eopkg, улучшены snap и pacman
+- RPM/eopkg counting, improved snap and pacman.
 
 ---
-
-## Как обновиться
-
-```bash
-cd noorfetch
-git pull
-cargo build --release
-cargo install --path .
-```
-
-Проверка:
-
-```bash
-./target/release/noorfetchre --version
-./target/release/noorfetchre --logo=alpine
-./target/release/noorfetchre -d
-```
-
-Конфиг: `~/.config/noorfetchre/config.json`
