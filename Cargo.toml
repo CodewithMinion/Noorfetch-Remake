@@ -1,0 +1,28 @@
+[package]
+name = "noorfetchre"
+version = "4.0.0"
+keywords = ["fetch", "cli"]
+authors = ["limforge <limforge@neutronen.net>"]
+description = "Noorfetch Remake — a blazingly fast system fetch written in Rust"
+repository = "https://codeberg.org/limforge/noorfetch"
+license = "LGPL-3.0-or-later"
+readme = "README.md"
+edition = "2024"
+default-run = "noorfetchre"
+
+[[bin]]
+name = "noorfetchre"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = 'abort'
+strip = true
+
+[dependencies]
+indexmap = { version = "2.13.0", features = ["serde"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+libc = "0.2"

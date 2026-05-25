@@ -1,0 +1,1 @@
+/home/real/Загрузки/noorfetch/target/release/noorfetchre: /home/real/Загрузки/noorfetch/src/functions/ascii.rs /home/real/Загрузки/noorfetch/src/functions/config.rs /home/real/Загрузки/noorfetch/src/functions/date.rs /home/real/Загрузки/noorfetch/src/functions/environment.rs /home/real/Загрузки/noorfetch/src/functions/sysinfo.rs /home/real/Загрузки/noorfetch/src/main.rs
